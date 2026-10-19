@@ -1,0 +1,1065 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sistema Híbrido Heavy-Volumen | Master Block Planner</title>
+  <style>
+    :root {
+      --bg-main: #0b0f17;
+      --bg-card: #151c28;
+      --bg-card-hover: #1c2536;
+      --bg-input: #0f141d;
+      --border: #263147;
+      --text-main: #f1f5f9;
+      --text-muted: #94a3b8;
+      --accent-green: #10b981;
+      --accent-green-dim: rgba(16, 185, 129, 0.15);
+      --accent-amber: #f59e0b;
+      --accent-amber-dim: rgba(245, 158, 11, 0.15);
+      --accent-red: #ef4444;
+      --accent-red-dim: rgba(239, 68, 68, 0.15);
+      --accent-blue: #3b82f6;
+      --accent-blue-dim: rgba(59, 130, 246, 0.15);
+      --accent-purple: #8b5cf6;
+      --accent-purple-dim: rgba(139, 92, 246, 0.15);
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+    }
+
+    body {
+      background-color: var(--bg-main);
+      color: var(--text-main);
+      line-height: 1.5;
+      padding: 16px;
+      max-width: 1150px;
+      margin: 0 auto;
+    }
+
+    /* HEADER */
+    .header {
+      background: linear-gradient(135deg, #151c28 0%, #0f172a 100%);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 20px 24px;
+      margin-bottom: 20px;
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-between;
+      align-items: center;
+      gap: 16px;
+    }
+
+    .header h1 {
+      font-size: 1.4rem;
+      font-weight: 800;
+      letter-spacing: -0.5px;
+      color: #fff;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .header p {
+      color: var(--text-muted);
+      font-size: 0.9rem;
+      margin-top: 4px;
+    }
+
+    .badge-row {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .pill {
+      padding: 5px 12px;
+      border-radius: 999px;
+      font-size: 0.78rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.4px;
+    }
+
+    .pill-green { background: var(--accent-green-dim); color: var(--accent-green); border: 1px solid rgba(16, 185, 129, 0.3); }
+    .pill-amber { background: var(--accent-amber-dim); color: var(--accent-amber); border: 1px solid rgba(245, 158, 11, 0.3); }
+    .pill-blue { background: var(--accent-blue-dim); color: var(--accent-blue); border: 1px solid rgba(59, 130, 246, 0.3); }
+    .pill-red { background: var(--accent-red-dim); color: var(--accent-red); border: 1px solid rgba(239, 68, 68, 0.3); }
+    .pill-purple { background: var(--accent-purple-dim); color: var(--accent-purple); border: 1px solid rgba(139, 92, 246, 0.3); }
+
+    /* SECTION TITLES */
+    .section-title {
+      font-size: 1.05rem;
+      font-weight: 700;
+      margin-bottom: 12px;
+      color: #e2e8f0;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    /* WEEK SELECTOR (MESOCYCLE) */
+    .mesocycle-box {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 18px;
+      margin-bottom: 20px;
+    }
+
+    .week-grid {
+      display: grid;
+      grid-template-columns: repeat(6, 1fr);
+      gap: 8px;
+      margin-bottom: 16px;
+    }
+
+    @media (max-width: 768px) {
+      .week-grid { grid-template-columns: repeat(3, 1fr); }
+    }
+
+    .week-btn {
+      background: var(--bg-input);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 12px 8px;
+      color: var(--text-muted);
+      cursor: pointer;
+      text-align: center;
+      transition: all 0.2s ease;
+    }
+
+    .week-btn:hover {
+      border-color: var(--accent-blue);
+      color: #fff;
+    }
+
+    .week-btn.active {
+      background: rgba(59, 130, 246, 0.18);
+      border-color: var(--accent-blue);
+      color: #fff;
+      box-shadow: 0 0 15px rgba(59, 130, 246, 0.2);
+    }
+
+    .week-btn .w-num {
+      font-size: 0.95rem;
+      font-weight: 800;
+      display: block;
+    }
+
+    .week-btn .w-tag {
+      font-size: 0.72rem;
+      opacity: 0.85;
+      margin-top: 2px;
+      display: block;
+    }
+
+    .week-details {
+      background: var(--bg-input);
+      border-left: 4px solid var(--accent-blue);
+      border-radius: 8px;
+      padding: 14px 16px;
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+      gap: 12px;
+    }
+
+    .detail-item span.label {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      font-weight: 700;
+      display: block;
+    }
+
+    .detail-item span.val {
+      font-size: 0.92rem;
+      font-weight: 600;
+      color: #fff;
+      margin-top: 2px;
+      display: block;
+    }
+
+    /* TWO COLUMN TOOLS: CALCULATOR + TIMER */
+    .tools-grid {
+      display: grid;
+      grid-template-columns: 1.4fr 1fr;
+      gap: 16px;
+      margin-bottom: 20px;
+    }
+
+    @media (max-width: 820px) {
+      .tools-grid { grid-template-columns: 1fr; }
+    }
+
+    .card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 18px;
+    }
+
+    .calc-input-row {
+      display: flex;
+      gap: 12px;
+      align-items: center;
+      margin-bottom: 14px;
+      flex-wrap: wrap;
+    }
+
+    .calc-input-row input {
+      background: var(--bg-input);
+      border: 1px solid var(--border);
+      color: #fff;
+      padding: 10px 14px;
+      border-radius: 8px;
+      font-size: 1rem;
+      font-weight: 700;
+      width: 120px;
+    }
+
+    .calc-results {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(135px, 1fr));
+      gap: 10px;
+    }
+
+    .calc-box {
+      background: var(--bg-input);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 10px;
+    }
+
+    .calc-box .c-title {
+      font-size: 0.72rem;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      font-weight: 700;
+    }
+
+    .calc-box .c-weight {
+      font-size: 1.15rem;
+      font-weight: 800;
+      margin-top: 3px;
+    }
+
+    .calc-box .c-sub {
+      font-size: 0.73rem;
+      color: var(--text-muted);
+      margin-top: 2px;
+    }
+
+    /* TIMER */
+    .timer-display {
+      font-size: 2.4rem;
+      font-weight: 800;
+      text-align: center;
+      font-variant-numeric: tabular-nums;
+      margin: 8px 0 12px 0;
+      color: var(--accent-green);
+    }
+
+    .timer-btns {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 8px;
+    }
+
+    .t-btn {
+      background: var(--bg-input);
+      border: 1px solid var(--border);
+      color: var(--text-main);
+      padding: 8px 6px;
+      border-radius: 8px;
+      font-size: 0.8rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: 0.15s;
+    }
+
+    .t-btn:hover {
+      background: var(--accent-blue);
+      border-color: var(--accent-blue);
+      color: #fff;
+    }
+
+    .t-btn.stop {
+      background: var(--accent-red-dim);
+      color: var(--accent-red);
+      border-color: rgba(239, 68, 68, 0.3);
+    }
+
+    /* DAY TABS */
+    .day-tabs {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 10px;
+      margin-bottom: 16px;
+    }
+
+    @media (max-width: 680px) {
+      .day-tabs { grid-template-columns: repeat(2, 1fr); }
+    }
+
+    .day-tab {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 12px;
+      cursor: pointer;
+      text-align: left;
+      color: var(--text-muted);
+      transition: 0.2s;
+    }
+
+    .day-tab.active {
+      background: linear-gradient(135deg, rgba(16, 185, 129, 0.16), rgba(59, 130, 246, 0.16));
+      border-color: var(--accent-green);
+      color: #fff;
+    }
+
+    .day-tab .d-name {
+      font-weight: 800;
+      font-size: 0.95rem;
+      display: block;
+    }
+
+    .day-tab .d-meta {
+      font-size: 0.75rem;
+      margin-top: 3px;
+      display: block;
+    }
+
+    /* ROUTINE TABLE */
+    .routine-container {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      overflow: hidden;
+      margin-bottom: 24px;
+    }
+
+    .routine-banner {
+      padding: 14px 18px;
+      background: #101622;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+
+    .table-wrap {
+      overflow-x: auto;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      min-width: 680px;
+    }
+
+    th {
+      text-align: left;
+      padding: 12px 14px;
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: var(--text-muted);
+      background: #121824;
+      border-bottom: 1px solid var(--border);
+    }
+
+    td {
+      padding: 14px;
+      border-bottom: 1px solid var(--border);
+      font-size: 0.88rem;
+      vertical-align: top;
+    }
+
+    tr:last-child td { border-bottom: none; }
+    tr:hover td { background: rgba(255, 255, 255, 0.015); }
+
+    .ex-name {
+      font-weight: 700;
+      color: #fff;
+      font-size: 0.95rem;
+    }
+
+    .ex-note {
+      font-size: 0.77rem;
+      color: var(--text-muted);
+      margin-top: 3px;
+    }
+
+    .set-line {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      margin-bottom: 4px;
+    }
+
+    .hevy-tag {
+      display: inline-block;
+      width: 20px;
+      height: 20px;
+      line-height: 20px;
+      text-align: center;
+      border-radius: 4px;
+      font-size: 0.72rem;
+      font-weight: 800;
+    }
+
+    .tag-w { background: var(--accent-amber-dim); color: var(--accent-amber); }
+    .tag-top { background: var(--accent-purple-dim); color: var(--accent-purple); }
+    .tag-bo { background: var(--accent-blue-dim); color: var(--accent-blue); }
+    .tag-f { background: var(--accent-red-dim); color: var(--accent-red); }
+
+    .rest-btn {
+      background: var(--bg-input);
+      border: 1px solid var(--border);
+      color: var(--accent-green);
+      padding: 3px 8px;
+      border-radius: 6px;
+      font-size: 0.76rem;
+      font-weight: 700;
+      cursor: pointer;
+      display: inline-block;
+      margin-bottom: 4px;
+    }
+
+    .rest-btn:hover {
+      background: var(--accent-green);
+      color: #000;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- HEADER -->
+  <div class="header">
+    <div>
+      <h1>⚡ SISTEMA HÍBRIDO: TOP SET + BACK-OFF</h1>
+      <p>Planificación por Bloques de 6 Semanas • Torso/Pierna F2 Asimétrico (Lunes/Martes Express vs. Viernes/Sábado Extendido)</p>
+    </div>
+    <div class="badge-row">
+      <span class="pill pill-purple">Top Set: 6-8 Reps</span>
+      <span class="pill pill-blue">Back-Off: -10% a -15%</span>
+      <span class="pill pill-green">10-12 Series/Músculo</span>
+    </div>
+  </div>
+
+  <!-- SELECTOR DE SEMANA DEL BLOQUE -->
+  <div class="mesocycle-box">
+    <div class="section-title">📅 Paso 1: Selecciona en qué Semana del Bloque estás (Cambia toda la rutina abajo)</div>
+    <div class="week-grid" id="weekGrid">
+      <button class="week-btn active" onclick="selectWeek(1)">
+        <span class="w-num">Semana 1</span>
+        <span class="w-tag">Calibración (RIR 2)</span>
+      </button>
+      <button class="week-btn" onclick="selectWeek(2)">
+        <span class="w-num">Semana 2</span>
+        <span class="w-tag">Progresión (RIR 1)</span>
+      </button>
+      <button class="week-btn" onclick="selectWeek(3)">
+        <span class="w-num">Semana 3</span>
+        <span class="w-tag">Progresión (RIR 1)</span>
+      </button>
+      <button class="week-btn" onclick="selectWeek(4)">
+        <span class="w-num">Semana 4</span>
+        <span class="w-tag">Récords (RIR 1-0)</span>
+      </button>
+      <button class="week-btn" onclick="selectWeek(5)">
+        <span class="w-num">Semana 5</span>
+        <span class="w-tag">Pico Heavy (RIR 0)</span>
+      </button>
+      <button class="week-btn" onclick="selectWeek(6)">
+        <span class="w-num">Semana 6</span>
+        <span class="w-tag">Descarga (RIR 4)</span>
+      </button>
+    </div>
+
+    <div class="week-details" id="weekDetails">
+      <!-- Se llena dinámicamente -->
+    </div>
+  </div>
+
+  <!-- CALCULADORA DE PESOS + CRONÓMETRO -->
+  <div class="tools-grid">
+    <div class="card">
+      <div class="section-title">🧮 Calculadora Rápida: Aproximaciones, Top Set y Día Fatigado</div>
+      <div class="calc-input-row">
+        <label style="font-size: 0.85rem; color: var(--text-muted);">Peso objetivo de tu <strong>Top Set (kg)</strong>:</label>
+        <input type="number" id="topWeightInput" value="100" step="2.5" oninput="calculateWeights()">
+        <span style="font-size: 0.8rem; color: var(--text-muted);">(Redondeado a discos de 2.5 kg)</span>
+      </div>
+      <div class="calc-results" id="calcResults">
+        <!-- Se llena dinámicamente -->
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="section-title">⏱️ Cronómetro de Descanso Inteligente</div>
+      <div class="timer-display" id="timerDisplay">00:00</div>
+      <div class="timer-btns">
+        <button class="t-btn" onclick="startTimer(210)">Top (3:30)</button>
+        <button class="t-btn" onclick="startTimer(120)">Back-Off (2:00)</button>
+        <button class="t-btn" onclick="startTimer(60)">Brazos (1:00)</button>
+        <button class="t-btn stop" onclick=" startTimer(15)">Rest-Pause (15s)</button>
+      </div>
+      <p style="font-size:0.75rem; color:var(--text-muted); text-align:center; margin-top:10px;">
+        También puedes tocar cualquier botón verde de tiempo dentro de la tabla de abajo.
+      </p>
+    </div>
+  </div>
+
+  <!-- SELECTOR DE DÍA DE ENTRENAMIENTO -->
+  <div class="section-title">🏋️ Paso 2: Selecciona tu Día de Entrenamiento</div>
+  <div class="day-tabs" id="dayTabs">
+    <button class="day-tab active" onclick="selectDay('lunes')">
+      <span class="d-name">LUNES: Torso A</span>
+      <span class="d-meta">⚡ Modo Express (~40 min)</span>
+    </button>
+    <button class="day-tab" onclick="selectDay('martes')">
+      <span class="d-name">MARTES: Pierna A</span>
+      <span class="d-meta">⚡ Modo Express (~40 min)</span>
+    </button>
+    <button class="day-tab" onclick="selectDay('viernes')">
+      <span class="d-name">VIERNES: Torso B</span>
+      <span class="d-meta">🔥 Modo Tanque (~55 min)</span>
+    </button>
+    <button class="day-tab" onclick="selectDay('sabado')">
+      <span class="d-name">SÁBADO: Pierna B</span>
+      <span class="d-meta">🔥 Modo Tanque (~55 min)</span>
+    </button>
+  </div>
+
+  <!-- TABLA DINÁMICA DE LA RUTINA -->
+  <div class="routine-container">
+    <div class="routine-banner" id="routineBanner">
+      <!-- Se llena dinámicamente -->
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th style="width: 26%;">Ejercicio & Etiqueta Hevy</th>
+            <th style="width: 30%;">Estructura de Series (Según Semana)</th>
+            <th style="width: 26%;">Objetivo de Reps & RIR</th>
+            <th style="width: 18%;">Descanso (Clic para reloj)</th>
+          </tr>
+        </thead>
+        <tbody id="routineBody">
+          <!-- Se llena dinámicamente -->
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <script>
+    let currentWeek = 1;
+    let currentDay = 'lunes';
+    let timerInterval = null;
+
+    const weekData = {
+      1: {
+        title: "Semana 1: Calibración y Base Mecánica",
+        rirMain: "RIR 2 (Guarda 2 reps en recámara)",
+        rirIso: "RIR 1 (Sin Rest-Pause esta semana)",
+        creatine: "Mini-Carga: 10g/día (5g mañana + 5g post-entreno) + 1L agua extra",
+        rule: "Anota todos tus pesos base en Hevy. No vayas al fallo total hoy para dejar margen de mejora en la Semana 2.",
+        color: "#3b82f6"
+      },
+      2: {
+        title: "Semana 2: Inicio de Doble Progresión + Rest-Pause",
+        rirMain: "RIR 1 Estricto (Última rep lenta pero limpia)",
+        rirIso: "RIR 0 (Fallo) + Activas Rest-Pause en Lunes/Martes",
+        creatine: "Mantenimiento: 5g/día post-entreno (Depósitos ya al 100%)",
+        rule: "Tu misión es sacar +1 o +2 repeticiones más que en la Semana 1 con el mismo peso.",
+        color: "#10b981"
+      },
+      3: {
+        title: "Semana 3: Sobrecarga de Cargas (Subida de Kilos)",
+        rirMain: "RIR 1 Estricto",
+        rirIso: "RIR 0 + Rest-Pause en Lunes/Martes",
+        creatine: "Mantenimiento: 5g/día sin fallar (incluso días de descanso)",
+        rule: "Todo ejercicio donde ya lograste 8 reps en Top Set o 10 reps en Back-Off sube un +2.5% a +5% de peso hoy.",
+        color: "#10b981"
+      },
+      4: {
+        title: "Semana 4: Consolidación de Récords",
+        rirMain: "RIR 1 rozando RIR 0.5",
+        rirIso: "RIR 0 Absoluto + Rest-Pause",
+        creatine: "Mantenimiento: 5g/día",
+        rule: "Si el calentamiento pesa demasiado hoy (fatiga acumulada), aplica el peso 'Plan B (-7%)' de la calculadora.",
+        color: "#f59e0b"
+      },
+      5: {
+        title: "Semana 5: Pico Heavy Duty (Overreaching Funcional)",
+        rirMain: "RIR 0 Técnico (Al fallo real en todas las series)",
+        rirIso: "RIR 0 + Rest-Pause de 15s en la última serie de TODO",
+        creatine: "Mantenimiento: 5g/día + Hidratación máxima",
+        rule: "Vacía el tanque. Como la Semana 6 es descarga, hoy buscas récords históricos en cada serie.",
+        color: "#ef4444"
+      },
+      6: {
+        title: "Semana 6: Descarga Estratégica (Deload y Supercompensación)",
+        rirMain: "RIR 4 (Mismo peso de Sem 4, mitad de repeticiones)",
+        rirIso: "RIR 3 (Suave, bombeo limpio, CERO Rest-Pause)",
+        creatine: "Mantenimiento: 5g/día (Ayuda a supercompensar glucógeno)",
+        rule: "Se elimina el 2do Back-Off Set. Sales del gimnasio en 25 min sintiéndote fresco. La próxima semana inicias el Bloque 2.",
+        color: "#8b5cf6"
+      }
+    };
+
+    const routines = {
+      lunes: {
+        title: "LUNES: Torso A (Modo Express ~40 min)",
+        subtitle: "Pecho Plano + Espalda Anchura + Brazos Intensos (Sin hombro lateral por tiempo)",
+        exercises: [
+          {
+            name: "1. Press Plano (Barra o Mancuernas)",
+            note: "Haz 3-4 series de aproximación rápidas (Etiqueta W) antes del Top Set.",
+            type: "compound_3",
+            topReps: "6–8 reps",
+            boReps: "8–10 reps (-12% peso)",
+            restTop: 210,
+            restBo: 120
+          },
+          {
+            name: "2. Jalón al Pecho (Agarre Prono Abierto)",
+            note: "Tira llevando los codos hacia las costillas, controla 2 seg la subida.",
+            type: "compound_3",
+            topReps: "6–8 reps",
+            boReps: "8–10 reps (-1 o 2 placas)",
+            restTop: 180,
+            restBo: 120
+          },
+          {
+            name: "3. Press Inclinado (Mancuernas o Multipower)",
+            note: "Ya tienes el pecho caliente, no necesitas aproximaciones largas.",
+            type: "compound_2",
+            topReps: "8–10 reps",
+            boReps: "10–12 reps (-10% peso)",
+            restTop: 120,
+            restBo: 90
+          },
+          {
+            name: "4. Remo Sentado en Polea (Apoyo en piernas)",
+            note: "Mantén el torso firme, estira escápulas adelante sin redondear lumbar.",
+            type: "compound_2",
+            topReps: "8–10 reps",
+            boReps: "10–12 reps (-1 o 2 placas)",
+            restTop: 120,
+            restBo: 90
+          },
+          {
+            name: "5A. [Superserie] Curl de Bíceps (Barra Z o Mancuernas)",
+            note: "Terminas las reps y pasas en 0 segundos a Tríceps.",
+            type: "iso_rp",
+            reps: "8–10 reps",
+            rest: 0
+          },
+          {
+            name: "5B. [Superserie] Extensión Tríceps en Polea Alta",
+            note: "Al terminar Tríceps descansas 60s y vuelves a Bíceps.",
+            type: "iso_rp",
+            reps: "8–10 reps",
+            rest: 60
+          }
+        ]
+      },
+      martes: {
+        title: "MARTES: Pierna A (Modo Express ~40 min)",
+        subtitle: "Cuádriceps Pesado + Peso Muerto Rumano + Máquinas con Rest-Pause",
+        exercises: [
+          {
+            name: "1. Sentadilla Libre o Prensa 45° Pesada",
+            note: "Profundidad constante en cada semana del bloque.",
+            type: "compound_3",
+            topReps: "6–8 reps",
+            boReps: "8–10 reps (-12% a -15% peso)",
+            restTop: 210,
+            restBo: 120
+          },
+          {
+            name: "2. Peso Muerto Rumano (Barra o Mancuernas)",
+            note: "Solo 2 series efectivas para no freír la espalda baja. Caderas atrás.",
+            type: "compound_2",
+            topReps: "6–8 reps",
+            boReps: "8–10 reps (-10% peso)",
+            restTop: 180,
+            restBo: 120
+          },
+          {
+            name: "3. Extensión de Cuádriceps en Máquina",
+            note: "Aguanta 1 segundo arriba apretando el cuádriceps en cada rep.",
+            type: "iso_rp",
+            reps: "10–12 reps",
+            rest: 90
+          },
+          {
+            name: "4. Curl Femoral (Tumbado o Sentado)",
+            note: "No levantes la cadera del banco al subir el peso.",
+            type: "iso_rp",
+            reps: "10–12 reps",
+            rest: 90
+          },
+          {
+            name: "5. Elevación de Gemelos (De pie o Prensa)",
+            note: "Pausa obligatoria de 2 segundos abajo en máximo estiramiento.",
+            type: "iso_rp",
+            reps: "10–12 reps",
+            rest: 60
+          }
+        ]
+      },
+      viernes: {
+        title: "VIERNES: Torso B (Modo Tanque ~55-60 min)",
+        subtitle: "Prioridad Espalda Grosor + Pecho Inclinado + Hombro Lateral + 3 Series Completas",
+        exercises: [
+          {
+            name: "1. Remo Sentado en Polea (Agarre ancho o neutro al abdomen)",
+            note: "Hoy empiezas fresco por espalda para darle la misma prioridad que al pecho.",
+            type: "compound_3",
+            topReps: "6–8 reps",
+            boReps: "8–10 reps (-1 o 2 placas)",
+            restTop: 180,
+            restBo: 120
+          },
+          {
+            name: "2. Press Inclinado (Barra o Mancuernas)",
+            note: "Hoy el Inclinado es tu básico pesado de pecho.",
+            type: "compound_3",
+            topReps: "6–8 reps",
+            boReps: "8–10 reps (-12% peso)",
+            restTop: 210,
+            restBo: 120
+          },
+          {
+            name: "3. Jalón al Pecho (Agarre Estrecho / Triángulo)",
+            note: "Enfocado en estirar el dorsal al máximo arriba.",
+            type: "compound_3",
+            topReps: "8–10 reps",
+            boReps: "10–12 reps (-1 placa)",
+            restTop: 120,
+            restBo: 90
+          },
+          {
+            name: "4. Aperturas en Máquina (Peck Deck) o Poleas / Fondos",
+            note: "3 series controladas buscando bombeo y estiramiento pectoral.",
+            type: "iso_3",
+            reps: "10–12 reps",
+            rest: 90
+          },
+          {
+            name: "5. Elevaciones Laterales (Mancuernas o Polea)",
+            note: "Clave para dar anchura estética en V. Levanta con los codos, no con las manos.",
+            type: "iso_3",
+            reps: "10–12 reps",
+            rest: 75
+          },
+          {
+            name: "6A. [Superserie] Curl Bíceps Banco Inclinado o Predicador",
+            note: "3 series completas sin descanso antes de pasar a tríceps.",
+            type: "iso_3",
+            reps: "8–10 reps",
+            rest: 0
+          },
+          {
+            name: "6B. [Superserie] Press Francés o Extensión Trasnuca Polea",
+            note: "Enfocado en la cabeza larga del tríceps (la que da más tamaño al brazo).",
+            type: "iso_3",
+            reps: "8–10 reps",
+            rest: 75
+          }
+        ]
+      },
+      sabado: {
+        title: "SÁBADO: Pierna B (Modo Tanque ~55-60 min)",
+        subtitle: "Volumen Completo de Pierna + Superserie Final de Hombro Lateral",
+        exercises: [
+          {
+            name: "1. Prensa 45° o Sentadilla (Alterna el que hiciste el Martes)",
+            note: "Pies a anchura media-baja para enfatizar cuádriceps.",
+            type: "compound_3",
+            topReps: "6–8 reps",
+            boReps: "8–10 reps (-12% peso)",
+            restTop: 210,
+            restBo: 120
+          },
+          {
+            name: "2. Curl Femoral Sentado o Tumbado (Pesado)",
+            note: "Hoy empezamos el trabajo de isquios con el curl pesado de 3 series.",
+            type: "compound_3",
+            topReps: "6–8 reps",
+            boReps: "8–10 reps (-1 placa)",
+            restTop: 150,
+            restBo: 90
+          },
+          {
+            name: "3. Extensión de Cuádriceps o Zancadas",
+            note: "3 series completas de 10-12 repeticiones.",
+            type: "iso_3",
+            reps: "10–12 reps",
+            rest: 90
+          },
+          {
+            name: "4. Peso Muerto Rumano con Mancuernas o Hiperextensiones",
+            note: "Ritmo constante enfocando el estiramiento de isquios y glúteo.",
+            type: "iso_3",
+            reps: "8–10 reps",
+            rest: 120
+          },
+          {
+            name: "5A. [Superserie] Elevación de Gemelos",
+            note: "Mientras descansan los gemelos, agarras las mancuernas para laterales.",
+            type: "iso_3",
+            reps: "10–12 reps",
+            rest: 0
+          },
+          {
+            name: "5B. [Superserie] Elevaciones Laterales con Mancuernas",
+            note: "6 series semanales de hombro lateral completadas en 0 minutos extra.",
+            type: "iso_3",
+            reps: "12–15 reps",
+            rest: 60
+          }
+        ]
+      }
+    };
+
+    function round25(val) {
+      return Math.round(val / 2.5) * 2.5;
+    }
+
+    function calculateWeights() {
+      const top = parseFloat(document.getElementById('topWeightInput').value) || 0;
+      const w1 = round25(top * 0.50);
+      const w2 = round25(top * 0.70);
+      const w3 = round25(top * 0.82);
+      const w4 = round25(top * 0.91);
+      const bo = round25(top * 0.88);
+      const badDay = round25(top * 0.925);
+
+      document.getElementById('calcResults').innerHTML = `
+        <div class="calc-box">
+          <div class="c-title" style="color:var(--accent-amber);">Aproximaciones (W)</div>
+          <div class="c-weight">${w1} → ${w2} → ${w3} kg</div>
+          <div class="c-sub">10 reps → 5 reps → 3 reps</div>
+        </div>
+        <div class="calc-box">
+          <div class="c-title" style="color:var(--accent-amber);">Test Nervioso (Última W)</div>
+          <div class="c-weight">${w4} kg x 1 rep</div>
+          <div class="c-sub">Descansa 3 min antes del Top</div>
+        </div>
+        <div class="calc-box">
+          <div class="c-title" style="color:var(--accent-purple);">Serie 1: TOP SET</div>
+          <div class="c-weight">${top} kg</div>
+          <div class="c-sub">Objetivo: 6 a 8 reps</div>
+        </div>
+        <div class="calc-box">
+          <div class="c-title" style="color:var(--accent-blue);">Series 2-3: BACK-OFF</div>
+          <div class="c-weight">${bo} kg (-12%)</div>
+          <div class="c-sub">Objetivo: 8 a 10 reps</div>
+        </div>
+        <div class="calc-box">
+          <div class="c-title" style="color:var(--accent-red);">Plan B (Día Fatigado)</div>
+          <div class="c-weight">${badDay} kg</div>
+          <div class="c-sub">Si ${w4} kg se sintió lento</div>
+        </div>
+      `;
+    }
+
+    function selectWeek(w) {
+      currentWeek = w;
+      const btns = document.querySelectorAll('.week-btn');
+      btns.forEach((b, idx) => b.classList.toggle('active', idx + 1 === w));
+
+      const info = weekData[w];
+      const detailsBox = document.getElementById('weekDetails');
+      detailsBox.style.borderLeftColor = info.color;
+      detailsBox.innerHTML = `
+        <div class="detail-item">
+          <span class="label">Enfoque de la Semana</span>
+          <span class="val" style="color:${info.color}">${info.title}</span>
+        </div>
+        <div class="detail-item">
+          <span class="label">Esfuerzo en Básicos / Aislados</span>
+          <span class="val">${info.rirMain} <br><small style="color:var(--text-muted)">${info.rirIso}</small></span>
+        </div>
+        <div class="detail-item">
+          <span class="label">Protocolo Creatina</span>
+          <span class="val" style="color:var(--accent-green)">${info.creatine}</span>
+        </div>
+        <div class="detail-item">
+          <span class="label">Regla de Progresión</span>
+          <span class="val">${info.rule}</span>
+        </div>
+      `;
+      renderRoutine();
+    }
+
+    function selectDay(day) {
+      currentDay = day;
+      const tabs = document.querySelectorAll('.day-tab');
+      const map = ['lunes', 'martes', 'viernes', 'sabado'];
+      tabs.forEach((t, idx) => t.classList.toggle('active', map[idx] === day));
+      renderRoutine();
+    }
+
+    function formatTime(sec) {
+      if (sec === 0) return "0 seg (Superserie)";
+      const m = Math.floor(sec / 60);
+      const s = sec % 60;
+      return m > 0 ? `${m}m ${s > 0 ? s + 's' : ''}` : `${s} seg`;
+    }
+
+    function renderRoutine() {
+      const dayObj = routines[currentDay];
+      const wInfo = weekData[currentWeek];
+
+      document.getElementById('routineBanner').innerHTML = `
+        <div>
+          <strong style="font-size:1.05rem; color:#fff;">${dayObj.title}</strong>
+          <div style="font-size:0.82rem; color:var(--text-muted);">${dayObj.subtitle}</div>
+        </div>
+        <span class="pill" style="background:rgba(255,255,255,0.08); color:${wInfo.color}; border:1px solid ${wInfo.color};">
+          Modo Activo: Semana ${currentWeek}
+        </span>
+      `;
+
+      const tbody = document.getElementById('routineBody');
+      tbody.innerHTML = dayObj.exercises.map(ex => {
+        let setsHtml = '';
+        let repsHtml = '';
+        let restHtml = '';
+
+        // Lógica de Series y RIR dinámica según la Semana seleccionada (1 a 6)
+        const mainRir = currentWeek === 1 ? "RIR 2" : (currentWeek <= 4 ? "RIR 1" : (currentWeek === 5 ? "RIR 0 (Fallo)" : "RIR 4 (Mitad reps)"));
+        const isoRir = currentWeek === 1 ? "RIR 1" : (currentWeek <= 5 ? "RIR 0 (Fallo)" : "RIR 3 (Suave)");
+
+        if (ex.type === 'compound_3') {
+          if (currentWeek === 6) {
+            setsHtml = `
+              <div class="set-line"><span class="hevy-tag tag-top">1</span> <strong>Top Set (Descarga)</strong></div>
+              <div class="set-line"><span class="hevy-tag tag-bo">2</span> Back-Off Set 1 (-12%)</div>
+              <div style="font-size:0.75rem; color:var(--accent-purple);">*Serie 3 eliminada por Semana de Descarga</div>
+            `;
+          } else {
+            setsHtml = `
+              <div class="set-line"><span class="hevy-tag tag-top">1</span> <strong>Top Set (Pesado)</strong></div>
+              <div class="set-line"><span class="hevy-tag tag-bo">2</span> Back-Off Set 1 (-12% peso)</div>
+              <div class="set-line"><span class="hevy-tag tag-bo">3</span> Back-Off Set 2 (Mismo peso S2)</div>
+            `;
+          }
+          repsHtml = `
+            <div style="margin-bottom:4px;"><strong>S1:</strong> ${currentWeek === 6 ? '4 reps fluidas' : ex.topReps} @ <span style="color:var(--accent-amber)">${mainRir}</span></div>
+            <div><strong>S2${currentWeek === 6 ? '' : '-S3'}:</strong> ${currentWeek === 6 ? '6 reps fluidas' : ex.boReps} @ <span style="color:var(--accent-green)">${mainRir}</span></div>
+          `;
+          restHtml = `
+            <button class="rest-btn" onclick="startTimer(${ex.restTop})">⏱️ S1: ${formatTime(ex.restTop)}</button><br>
+            <button class="rest-btn" onclick="startTimer(${ex.restBo})">⏱️ S2-3: ${formatTime(ex.restBo)}</button>
+          `;
+        } else if (ex.type === 'compound_2') {
+          setsHtml = `
+            <div class="set-line"><span class="hevy-tag tag-top">1</span> <strong>Top Set</strong></div>
+            <div class="set-line"><span class="hevy-tag tag-bo">2</span> Back-Off Set (-10% peso)</div>
+          `;
+          repsHtml = `
+            <div style="margin-bottom:4px;"><strong>S1:</strong> ${currentWeek === 6 ? '5 reps' : ex.topReps} @ <span style="color:var(--accent-amber)">${mainRir}</span></div>
+            <div><strong>S2:</strong> ${currentWeek === 6 ? '6 reps' : ex.boReps} @ <span style="color:var(--accent-green)">${ currentWeek === 5 ? 'RIR 0 + Rest-Pause 15s' : mainRir}</span></div>
+          `;
+          restHtml = `
+            <button class="rest-btn" onclick="startTimer(${ex.restTop})">⏱️ S1: ${formatTime(ex.restTop)}</button><br>
+            <button class="rest-btn" onclick="startTimer(${ex.restBo})">⏱️ S2: ${formatTime(ex.restBo)}</button>
+          `;
+        } else if (ex.type === 'iso_rp') {
+          const useRP = currentWeek >= 2 && currentWeek <= 5;
+          setsHtml = `
+            <div class="set-line"><span class="hevy-tag tag-bo">1</span> Serie Lineal 1</div>
+            <div class="set-line"><span class="hevy-tag ${useRP ? 'tag-f' : 'tag-bo'}">${useRP ? 'F' : '2'}</span> Serie 2 ${useRP ? '<strong>+ Rest-Pause (15s)</strong>' : '(Sin Rest-Pause hoy)'}</div>
+          `;
+          repsHtml = `
+            <div style="margin-bottom:4px;"><strong>S1:</strong> ${ex.reps} @ <span style="color:var(--accent-green)">${isoRir}</span></div>
+            <div><strong>S2:</strong> ${ex.reps} ${useRP ? '+ <strong>15s pausa + 3-4 reps al fallo</strong>' : `@ ${isoRir}`}</div>
+          `;
+          restHtml = ex.rest === 0
+            ? `<span style="font-size:0.78rem; color:var(--accent-amber);">⚡ 0 seg (Pasa al siguiente)</span>`
+            : `<button class="rest-btn" onclick="startTimer(${ex.rest})">⏱️ ${formatTime(ex.rest)}</button>`;
+        } else if (ex.type === 'iso_3') {
+          if (currentWeek === 6) {
+            setsHtml = `
+              <div class="set-line"><span class="hevy-tag tag-bo">1</span> Serie Lineal 1</div>
+              <div class="set-line"><span class="hevy-tag tag-bo">2</span> Serie Lineal 2 (Descarga)</div>
+            `;
+          } else {
+            setsHtml = `
+              <div class="set-line"><span class="hevy-tag tag-bo">1</span> Serie Lineal 1</div>
+              <div class="set-line"><span class="hevy-tag tag-bo">2</span> Serie Lineal 2</div>
+              <div class="set-line"><span class="hevy-tag ${currentWeek === 5 ? 'tag-f' : 'tag-bo'}">${currentWeek === 5 ? 'F' : '3'}</span> Serie 3 ${currentWeek === 5 ? '<strong>+ Rest-Pause 15s</strong>' : ''}</div>
+            `;
+          }
+          repsHtml = `
+            <div><strong>Todas las series:</strong> ${ex.reps} @ <span style="color:var(--accent-green)">${isoRir}</span></div>
+            ${currentWeek === 5 ? '<div style="font-size:0.78rem; color:var(--accent-red); margin-top:3px;">🔥 Semana 5: En la 3ra serie descansa 15s y saca 3 reps extra.</div>' : ''}
+          `;
+          restHtml = ex.rest === 0
+            ? `<span style="font-size:0.78rem; color:var(--accent-amber);">⚡ 0 seg (Superserie)</span>`
+            : `<button class="rest-btn" onclick="startTimer(${ex.rest})">⏱️ ${formatTime(ex.rest)}</button>`;
+        }
+
+        return `
+          <tr>
+            <td>
+              <div class="ex-name">${ex.name}</div>
+              <div class="ex-note">${ex.note}</div>
+            </td>
+            <td>${setsHtml}</td>
+            <td>${repsHtml}</td>
+            <td>${restHtml}</td>
+          </tr>
+        `;
+      }).join('');
+    }
+
+    function startTimer(seconds) {
+      clearInterval(timerInterval);
+      let remaining = seconds;
+      const display = document.getElementById('timerDisplay');
+
+      function updateUI() {
+        const m = String(Math.floor(remaining / 60)).padStart(2, '0');
+        const s = String(remaining % 60).padStart(2, '0');
+        display.textContent = `${m}:${s}`;
+        display.style.color = remaining <= 10 ? '#ef4444' : '#10b981';
+      }
+
+      updateUI();
+      timerInterval = setInterval(() => {
+        remaining--;
+        if (remaining < 0) {
+          clearInterval(timerInterval);
+          display.textContent = "¡A DARLE!";
+          display.style.color = "#f59e0b";
+          return;
+        }
+        updateUI();
+      }, 1000);
+    }
+
+    // Inicializar vista
+    calculateWeights();
+    selectWeek(1);
+  </script>
+</body>
+</html>
